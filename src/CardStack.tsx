@@ -141,10 +141,12 @@ export function CardStack<T>({
   const dots = count <= 12;
   const hasNav = count > 1;
   // Constant gutters (deck-shaped, not position-shaped) so the layout never
-  // shifts while browsing.
+  // shifts while browsing. The pile grows to the LEFT of the active card
+  // (owner ask 2026-07-19: "the forward most card is the right most").
   const gutter = Math.min(maxPeek, count - 1) * OFFSET;
-  const topPad = header ? 13 : 2;
-  const bottomPad = Math.max(gutter, hasNav ? PILL_OVERHANG : 0) + 3;
+  // Badge + Prev/Next all ride the active card's TOP edge now.
+  const topPad = header || hasNav ? 15 : 2;
+  const bottomPad = gutter + 3;
 
   // The mounted layer window: the just-cycled card (d = -1, flying off /
   // waiting to fly back), the active card (d = 0), and the stacked cards
@@ -159,49 +161,48 @@ export function CardStack<T>({
 
   return (
     <div className={`pc-cardstack${className ? ` ${className}` : ""}`}>
-      {hasNav || canExpand ? (
-        <div className="pc-cardstack__bar">
-          {hasNav ? (
-            dots ? (
-              <div
-                className="pc-cardstack__dots"
-                role="tablist"
-                aria-label={`Card ${active + 1} of ${count}`}
-              >
-                {items.map((it, i) => (
-                  <button
-                    key={getKey(it, i)}
-                    type="button"
-                    role="tab"
-                    aria-selected={i === active}
-                    aria-label={`Go to card ${i + 1} of ${count}`}
-                    className={`pc-cardstack__dot${i === active ? " is-active" : ""}`}
-                    onClick={() => setIndex(i)}
-                  />
-                ))}
-              </div>
-            ) : (
-              <span
-                className="pc-cardstack__count"
-                aria-live="polite"
-                aria-label={`Card ${active + 1} of ${count}`}
-              >
-                {active + 1} <i>of</i> {count}
-              </span>
-            )
-          ) : null}
-          {canExpand ? (
-            <button
-              type="button"
-              className="pc-cardstack__expand"
-              aria-expanded={expanded}
-              onClick={() => setExpanded((v) => !v)}
-            >
-              {expanded ? "Collapse" : "Expand"}
-            </button>
-          ) : null}
-        </div>
-      ) : null}
+      {/* The position indicator renders for EVERY deck — a single-card stack
+          still shows its one selected dot, so decks read consistently
+          (owner ask 2026-07-19). */}
+      <div className="pc-cardstack__bar">
+        {dots ? (
+          <div
+            className="pc-cardstack__dots"
+            role="tablist"
+            aria-label={`Card ${active + 1} of ${count}`}
+          >
+            {items.map((it, i) => (
+              <button
+                key={getKey(it, i)}
+                type="button"
+                role="tab"
+                aria-selected={i === active}
+                aria-label={`Go to card ${i + 1} of ${count}`}
+                className={`pc-cardstack__dot${i === active ? " is-active" : ""}`}
+                onClick={() => setIndex(i)}
+              />
+            ))}
+          </div>
+        ) : (
+          <span
+            className="pc-cardstack__count"
+            aria-live="polite"
+            aria-label={`Card ${active + 1} of ${count}`}
+          >
+            {active + 1} <i>of</i> {count}
+          </span>
+        )}
+        {canExpand ? (
+          <button
+            type="button"
+            className="pc-cardstack__expand"
+            aria-expanded={expanded}
+            onClick={() => setExpanded((v) => !v)}
+          >
+            {expanded ? "Collapse" : "Expand"}
+          </button>
+        ) : null}
+      </div>
 
       <div
         className="pc-cardstack__deck"
@@ -219,14 +220,18 @@ export function CardStack<T>({
           const isActive = d === 0;
           const style: CSSProperties = {
             top: topPad,
-            right: gutter,
+            left: gutter,
+            right: 0,
             zIndex: d === -1 ? 4 : d === 0 ? 3 : 2 - d,
+            // The pile grows LEFT-and-down behind the right-most active card;
+            // a just-cycled card flies off to the RIGHT (the direction of
+            // progress) and flies back in from there on Prev.
             transform:
               d === -1
-                ? "translate(-55%, -4%) rotate(-5deg)"
+                ? "translate(45%, -4%) rotate(5deg)"
                 : d === 0
                   ? "none"
-                  : `translate(${d * OFFSET}px, ${d * OFFSET}px)`,
+                  : `translate(${-d * OFFSET}px, ${d * OFFSET}px)`,
             opacity: d === -1 ? 0 : 1,
             // Stacked + exiting layers pin to the active card's silhouette so
             // the pile's edges stay uniform whatever each card's own content
@@ -285,7 +290,8 @@ export function CardStack<T>({
 
       <style>{`
       .pc-cardstack { display: flex; flex-direction: column; gap: 5px; }
-      .pc-cardstack__bar { display: flex; align-items: center; gap: 8px; min-height: 14px; padding-inline: 3px; }
+      /* Centred position indicator (owner ask 2026-07-19). */
+      .pc-cardstack__bar { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 12px; padding-inline: 3px; }
       .pc-cardstack__deck {
         position: relative; outline: none; border-radius: 14px;
         transition: height 320ms cubic-bezier(0.2, 0.8, 0.25, 1);
@@ -294,7 +300,7 @@ export function CardStack<T>({
 
       /* ── The layers — one element per card in the window, transform-driven ── */
       .pc-cardstack__card {
-        position: absolute; left: 0; overflow: hidden;
+        position: absolute; overflow: hidden;
         border-radius: 13px;
         border: 1px solid color-mix(in srgb, var(--accent, #7dd3fc) 22%, var(--border, rgba(125, 211, 252, 0.2)));
         /* OPAQUE base is load-bearing: --bg-2 is a translucent wash in the
@@ -314,7 +320,16 @@ export function CardStack<T>({
       }
       .pc-cardstack__card.is-top { overflow: visible; }
       .pc-cardstack__card.is-back { cursor: pointer; }
-      .pc-cardstack__card.is-back:hover { filter: brightness(1.12); }
+      /* Pronounced hover (owner ask 2026-07-19): the stacked card lights up,
+         its edge goes accent, and it nudges toward the front. The CSS
+         translate property composes with the inline transform, so the nudge
+         never fights the stack offset. */
+      .pc-cardstack__card.is-back:hover {
+        filter: brightness(1.35);
+        border-color: color-mix(in srgb, var(--accent, #7dd3fc) 60%, var(--border, rgba(125, 211, 252, 0.2)));
+        translate: 4px 0;
+        box-shadow: 0 10px 22px rgba(0, 0, 0, 0.5);
+      }
       .pc-cardstack__card.is-exit { pointer-events: none; }
       /* Consumers' own card boxes render INSIDE this chrome — strip theirs so
          the deck never shows a double border. */
@@ -332,11 +347,11 @@ export function CardStack<T>({
         .pc-cardstack__deck, .pc-cardstack__card { transition: none; }
       }
 
-      /* ── Category badge, sitting ON the active card's top edge ─────────── */
+      /* ── Category badge, CENTRED on the active card's top edge ─────────── */
       .pc-cardstack__header {
-        position: absolute; top: -12px; left: 12px; z-index: 5;
+        position: absolute; top: -12px; left: 50%; transform: translateX(-50%); z-index: 5;
         display: inline-flex; align-items: center; gap: 7px;
-        max-width: calc(100% - 24px);
+        max-width: calc(100% - 170px);
         padding: 3px 10px; border-radius: 8px;
         background: var(--bg-1, #0d151d);
         border: 1px solid color-mix(in srgb, var(--accent, #7dd3fc) 32%, var(--border, rgba(125, 211, 252, 0.2)));
@@ -351,9 +366,10 @@ export function CardStack<T>({
         font-size: 10px; color: var(--fg-mute, #7f9bb4); font-variant-numeric: tabular-nums;
       }
 
-      /* ── On-card Prev / Next pills, straddling the card's bottom edge ──── */
+      /* ── On-card Prev / Next pills, straddling the card's TOP edge (owner
+            ask 2026-07-19), flanking the centred category badge ───────────── */
       .pc-cardstack__navpill {
-        position: absolute; bottom: ${-PILL_OVERHANG}px; z-index: 6;
+        position: absolute; top: ${-PILL_OVERHANG}px; z-index: 6;
         display: inline-flex; align-items: center; gap: 3px;
         height: 26px; padding: 0 11px; border-radius: 999px; cursor: pointer;
         font: inherit; font-size: 11px; font-weight: 700; letter-spacing: 0; /* design lint: no nonzero tracking */
@@ -370,18 +386,21 @@ export function CardStack<T>({
       }
       .pc-cardstack__navpill:disabled { opacity: 0.3; cursor: default; }
 
-      /* ── Position indicator, above the card ────────────────────────────── */
-      .pc-cardstack__dots { display: flex; align-items: center; gap: 5px; }
+      /* ── Position indicator, centred above the card: small UNIFORM circles,
+            the selected one unmistakably lit (owner ask 2026-07-19 — no
+            stretched pill, no oversized dots; always shown, even for one). ── */
+      .pc-cardstack__dots { display: flex; align-items: center; gap: 6px; }
       .pc-cardstack__dot {
-        width: 7px; height: 7px; padding: 0; border: 0; border-radius: 999px; cursor: pointer;
-        background: color-mix(in srgb, var(--fg-mute, #7f9bb4) 45%, transparent);
-        transition: width 200ms ease, background 200ms ease;
+        width: 6px; height: 6px; padding: 0; border: 0; border-radius: 50%; cursor: pointer;
+        background: color-mix(in srgb, var(--fg-mute, #7f9bb4) 40%, transparent);
+        transition: background 160ms ease, box-shadow 160ms ease, transform 160ms ease;
       }
-      .pc-cardstack__dot:hover { background: var(--fg-mute, #7f9bb4); }
+      .pc-cardstack__dot:hover { background: var(--fg-mute, #7f9bb4); transform: scale(1.25); }
       .pc-cardstack__dot.is-active {
-        width: 22px;
         background: var(--accent, #7dd3fc);
-        box-shadow: 0 0 8px color-mix(in srgb, var(--accent, #7dd3fc) 45%, transparent);
+        box-shadow:
+          0 0 0 2px color-mix(in srgb, var(--accent, #7dd3fc) 35%, transparent),
+          0 0 7px color-mix(in srgb, var(--accent, #7dd3fc) 60%, transparent);
       }
       .pc-cardstack__count {
         font-size: 11px; font-variant-numeric: tabular-nums; color: var(--fg-dim, #b9d4e8);
