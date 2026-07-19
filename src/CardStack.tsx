@@ -256,36 +256,50 @@ export function CardStack<T>({
                   ? renderExpanded(it, idx)
                   : renderCard(it, idx)}
               </div>
-              {isActive && header ? (
-                <div className="pc-cardstack__header">{header}</div>
-              ) : null}
-              {isActive && hasNav ? (
-                <>
-                  <button
-                    type="button"
-                    className="pc-cardstack__navpill pc-cardstack__navpill--prev"
-                    aria-label="Previous card"
-                    disabled={active === 0}
-                    onClick={() => step(-1)}
-                  >
-                    <ChevronLeft size={13} aria-hidden />
-                    <span>Prev</span>
-                  </button>
-                  <button
-                    type="button"
-                    className="pc-cardstack__navpill pc-cardstack__navpill--next"
-                    aria-label="Next card"
-                    disabled={active >= count - 1}
-                    onClick={() => step(1)}
-                  >
-                    <span>Next</span>
-                    <ChevronRight size={13} aria-hidden />
-                  </button>
-                </>
-              ) : null}
             </div>
           );
         })}
+
+        {/* Badge + Prev/Next anchor to the DECK (every layer shares the same
+            top edge), so they never remount — no flash while cards animate
+            beneath them. */}
+        {header ? (
+          <div
+            className="pc-cardstack__header"
+            style={{
+              top: topPad - 12,
+              left: `calc(50% + ${gutter / 2}px)`,
+            }}
+          >
+            {header}
+          </div>
+        ) : null}
+        {hasNav ? (
+          <>
+            <button
+              type="button"
+              className="pc-cardstack__navpill pc-cardstack__navpill--prev"
+              aria-label="Previous card"
+              disabled={active === 0}
+              onClick={() => step(-1)}
+              style={{ top: topPad - PILL_OVERHANG, left: gutter + 10 }}
+            >
+              <ChevronLeft size={13} aria-hidden />
+              <span>Prev</span>
+            </button>
+            <button
+              type="button"
+              className="pc-cardstack__navpill pc-cardstack__navpill--next"
+              aria-label="Next card"
+              disabled={active >= count - 1}
+              onClick={() => step(1)}
+              style={{ top: topPad - PILL_OVERHANG, right: 10 }}
+            >
+              <span>Next</span>
+              <ChevronRight size={13} aria-hidden />
+            </button>
+          </>
+        ) : null}
       </div>
 
       <style>{`
@@ -316,7 +330,9 @@ export function CardStack<T>({
           linear-gradient(var(--bg-2, rgba(255, 255, 255, 0.04)),
             var(--bg-2, rgba(255, 255, 255, 0.04)));
         box-shadow: 0 12px 26px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-        transition: transform 320ms cubic-bezier(0.2, 0.8, 0.25, 1), opacity 240ms ease;
+        /* Slight spring overshoot for cards settling INTO place; the exiting
+           card overrides with an accelerate-away curve below. */
+        transition: transform 340ms cubic-bezier(0.3, 1.16, 0.35, 1), opacity 260ms ease;
       }
       .pc-cardstack__card.is-top { overflow: visible; }
       .pc-cardstack__card.is-back { cursor: pointer; }
@@ -330,7 +346,10 @@ export function CardStack<T>({
         translate: 4px 0;
         box-shadow: 0 10px 22px rgba(0, 0, 0, 0.5);
       }
-      .pc-cardstack__card.is-exit { pointer-events: none; }
+      .pc-cardstack__card.is-exit {
+        pointer-events: none;
+        transition: transform 300ms cubic-bezier(0.5, 0, 0.75, 0.35), opacity 230ms ease-out;
+      }
       /* Consumers' own card boxes render INSIDE this chrome — strip theirs so
          the deck never shows a double border. */
       .pc-cardstack .pc-cardstack__content > * {
@@ -339,6 +358,7 @@ export function CardStack<T>({
       /* Stacked cards show their content dimmed under the active card — the
          pile looks like real paper, and the content is ALREADY THERE when the
          card slides up, so nothing pops in. Inert until it is the top card. */
+      .pc-cardstack__content { transition: opacity 300ms ease; }
       .pc-cardstack__card:not(.is-top) .pc-cardstack__content { pointer-events: none; }
       .pc-cardstack__card[data-depth="1"] .pc-cardstack__content { opacity: 0.45; }
       .pc-cardstack__card[data-depth="2"] .pc-cardstack__content { opacity: 0.28; }
