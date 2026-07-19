@@ -389,9 +389,11 @@ export function CardStack<T>({
       /* ── Position indicator, centred above the card: small UNIFORM circles,
             the selected one unmistakably lit (owner ask 2026-07-19 — no
             stretched pill, no oversized dots; always shown, even for one). ── */
-      .pc-cardstack__dots { display: flex; align-items: center; gap: 6px; }
+      .pc-cardstack__dots { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: center; }
       .pc-cardstack__dot {
-        width: 6px; height: 6px; padding: 0; border: 0; border-radius: 50%; cursor: pointer;
+        /* flex: none is load-bearing — without it a crowded row SQUASHES the
+           circles into ovals (owner report 2026-07-19). */
+        flex: none; width: 6px; height: 6px; padding: 0; border: 0; border-radius: 50%; cursor: pointer;
         background: color-mix(in srgb, var(--fg-mute, #7f9bb4) 40%, transparent);
         transition: background 160ms ease, box-shadow 160ms ease, transform 160ms ease;
       }
