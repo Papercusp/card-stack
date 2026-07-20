@@ -3,27 +3,27 @@
  * cards (owner ask 2026-07-19: "stack cards of the same type so that they
  * overlap, and then give a way for the user to navigate through them").
  *
- * The design (owner-refined 2026-07-19, 4th pass — animation rebuilt):
- *   - Cards behind the active one are stacked DOWN-AND-RIGHT (each a little
- *     right of + below the one above), with their REAL content rendered dimmed
- *     underneath, so the pile reads as a physical deck. Clicking a stacked
- *     card jumps straight to it.
+ * The design (owner-refined 2026-07-19, v6 + category accents):
+ *   - The ACTIVE card is the RIGHT-MOST; the pile of upcoming cards stacks
+ *     left-and-down behind it, each with its REAL content rendered dimmed, so
+ *     the deck reads as physical paper. Clicking a stacked card jumps to it.
  *   - The cycle animation is the index-based deck pattern the Motion/Framer
- *     card-stack example uses, done right this time: every card in the window
+ *     card-stack example uses: every card in the window
  *     [active-1 … active+maxPeek] stays MOUNTED as the SAME element type, and
  *     only its transform/opacity (derived from its distance to the active
- *     index) changes — so stepping NEXT smoothly flies the top card off-left
- *     with a tilt + fade while the next card (content already visible) slides
- *     up out of the pile, and stepping PREV flies it back on. The v3 bug was
- *     mixing <button> backs with a <div> top: React REMOUNTED on promotion,
- *     so nothing transitioned. The deck's height animates between cards too.
- *   - Navigation is ON the card: "‹ Prev" / "Next ›" pills straddling the
- *     active card's bottom edge (they ride its slide-in), plus ← → keys when
- *     the deck is focused.
- *   - The position indicator sits ABOVE the card: story-style dots where the
- *     active dot stretches into an accent pill (plain `n of N` beyond 12).
- *   - The optional `header` (category label + count) renders as a badge
- *     overlapping the active card's TOP edge — visibly attached to its card.
+ *     index) changes — stepping NEXT flies the top card off to the RIGHT (the
+ *     direction of progress) with a tilt + fade while the next card (content
+ *     already visible, brightening through the slide) settles in on a slight
+ *     spring; PREV flies it back. The deck's height animates between cards.
+ *   - Navigation + identity anchor to the DECK (they never remount/flash):
+ *     "‹ Prev" / "Next ›" pills straddle the active card's TOP edge, flanking
+ *     the centred category badge; ← → keys work when the deck is focused.
+ *   - The position indicator sits centred ABOVE the card: small uniform dot
+ *     circles (geometry pinned against host tap-target button rules), the
+ *     selected one lit with the accent + a glow ring; always rendered, even
+ *     for a single-card deck (plain `n of N` beyond 12 cards).
+ *   - `accent` (the deck's CATEGORY color) tints the whole chrome via the
+ *     `--cs-accent` custom property — card edge, badge, active dot, hovers.
  *
  * Pure CSS transitions, no animation dependency (interaction is click/keys,
  * not drag). Self-styled in the panel idiom (scoped `pc-cardstack__*`) so it
