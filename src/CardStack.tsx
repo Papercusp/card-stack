@@ -62,6 +62,14 @@ export interface CardStackProps<T> {
   className?: string;
   /** How many stacked cards to show behind the active one (default 2). */
   maxPeek?: number;
+  /**
+   * The deck's CATEGORY color (owner ask 2026-07-19d): every deck shows one
+   * top-level category, and this accent is applied automatically across the
+   * deck chrome — card edge tint, badge, active dot, nav hovers — via the
+   * `--cs-accent` custom property. Category-derived, never stack-order-derived.
+   * Omit ⇒ the host theme's `--accent`.
+   */
+  accent?: string;
 }
 
 /** Px each stacked card shifts right + down from the one above it. */
@@ -82,6 +90,7 @@ export function CardStack<T>({
   ariaLabel,
   className,
   maxPeek = 2,
+  accent,
 }: CardStackProps<T>) {
   const [index, setIndex] = useState(0);
   const [expanded, setExpanded] = useState(false);
@@ -160,7 +169,10 @@ export function CardStack<T>({
   layers.push({ idx: active, d: 0 });
 
   return (
-    <div className={`pc-cardstack${className ? ` ${className}` : ""}`}>
+    <div
+      className={`pc-cardstack${className ? ` ${className}` : ""}`}
+      style={accent ? ({ "--cs-accent": accent } as CSSProperties) : undefined}
+    >
       {/* The position indicator renders for EVERY deck — a single-card stack
           still shows its one selected dot, so decks read consistently
           (owner ask 2026-07-19). */}
@@ -310,13 +322,13 @@ export function CardStack<T>({
         position: relative; outline: none; border-radius: 14px;
         transition: height 320ms cubic-bezier(0.2, 0.8, 0.25, 1);
       }
-      .pc-cardstack__deck:focus-visible { box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent, #7dd3fc) 55%, transparent); }
+      .pc-cardstack__deck:focus-visible { box-shadow: 0 0 0 2px color-mix(in srgb, var(--cs-accent, var(--accent, #7dd3fc)) 55%, transparent); }
 
       /* ── The layers — one element per card in the window, transform-driven ── */
       .pc-cardstack__card {
         position: absolute; overflow: hidden;
         border-radius: 13px;
-        border: 1px solid color-mix(in srgb, var(--accent, #7dd3fc) 22%, var(--border, rgba(125, 211, 252, 0.2)));
+        border: 1px solid color-mix(in srgb, var(--cs-accent, var(--accent, #7dd3fc)) 22%, var(--border, rgba(125, 211, 252, 0.2)));
         /* OPAQUE base is load-bearing: --bg-2 is a translucent wash in the
            theme, and the stacked layers behind this one carry real content —
            without an opaque floor their text bleeds THROUGH the active card
@@ -325,7 +337,7 @@ export function CardStack<T>({
         background-color: var(--bg-1, #0d151d);
         background-image:
           linear-gradient(168deg,
-            color-mix(in srgb, var(--accent, #7dd3fc) 8%, transparent) 0%,
+            color-mix(in srgb, var(--cs-accent, var(--accent, #7dd3fc)) 8%, transparent) 0%,
             transparent 60%),
           linear-gradient(var(--bg-2, rgba(255, 255, 255, 0.04)),
             var(--bg-2, rgba(255, 255, 255, 0.04)));
@@ -342,7 +354,7 @@ export function CardStack<T>({
          never fights the stack offset. */
       .pc-cardstack__card.is-back:hover {
         filter: brightness(1.35);
-        border-color: color-mix(in srgb, var(--accent, #7dd3fc) 60%, var(--border, rgba(125, 211, 252, 0.2)));
+        border-color: color-mix(in srgb, var(--cs-accent, var(--accent, #7dd3fc)) 60%, var(--border, rgba(125, 211, 252, 0.2)));
         translate: 4px 0;
         box-shadow: 0 10px 22px rgba(0, 0, 0, 0.5);
       }
@@ -374,7 +386,7 @@ export function CardStack<T>({
         max-width: calc(100% - 170px);
         padding: 3px 10px; border-radius: 8px;
         background: var(--bg-1, #0d151d);
-        border: 1px solid color-mix(in srgb, var(--accent, #7dd3fc) 32%, var(--border, rgba(125, 211, 252, 0.2)));
+        border: 1px solid color-mix(in srgb, var(--cs-accent, var(--accent, #7dd3fc)) 32%, var(--border, rgba(125, 211, 252, 0.2)));
         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
         font-size: 10.5px; white-space: nowrap;
       }
@@ -393,7 +405,7 @@ export function CardStack<T>({
         display: inline-flex; align-items: center; gap: 3px;
         height: 26px; padding: 0 11px; border-radius: 999px; cursor: pointer;
         font: inherit; font-size: 11px; font-weight: 700; letter-spacing: 0; /* design lint: no nonzero tracking */
-        border: 1px solid color-mix(in srgb, var(--accent, #7dd3fc) 42%, var(--border, rgba(125, 211, 252, 0.2)));
+        border: 1px solid color-mix(in srgb, var(--cs-accent, var(--accent, #7dd3fc)) 42%, var(--border, rgba(125, 211, 252, 0.2)));
         background: var(--bg-1, #0d151d); color: var(--fg-dim, #b9d4e8);
         box-shadow: 0 5px 14px rgba(0, 0, 0, 0.45);
         transition: color 140ms ease, background 140ms ease, border-color 140ms ease;
@@ -402,7 +414,7 @@ export function CardStack<T>({
       .pc-cardstack__navpill--next { right: 10px; }
       .pc-cardstack__navpill:hover:not(:disabled) {
         color: var(--fg, #e7eef5);
-        background: color-mix(in srgb, var(--accent, #7dd3fc) 15%, var(--bg-1, #0d151d));
+        background: color-mix(in srgb, var(--cs-accent, var(--accent, #7dd3fc)) 15%, var(--bg-1, #0d151d));
       }
       .pc-cardstack__navpill:disabled { opacity: 0.3; cursor: default; }
 
@@ -423,10 +435,10 @@ export function CardStack<T>({
       }
       .pc-cardstack__dot:hover { background: var(--fg-mute, #7f9bb4); transform: scale(1.25); }
       .pc-cardstack__dot.is-active {
-        background: var(--accent, #7dd3fc);
+        background: var(--cs-accent, var(--accent, #7dd3fc));
         box-shadow:
-          0 0 0 2px color-mix(in srgb, var(--accent, #7dd3fc) 35%, transparent),
-          0 0 7px color-mix(in srgb, var(--accent, #7dd3fc) 60%, transparent);
+          0 0 0 2px color-mix(in srgb, var(--cs-accent, var(--accent, #7dd3fc)) 35%, transparent),
+          0 0 7px color-mix(in srgb, var(--cs-accent, var(--accent, #7dd3fc)) 60%, transparent);
       }
       .pc-cardstack__count {
         font-size: 11px; font-variant-numeric: tabular-nums; color: var(--fg-dim, #b9d4e8);
@@ -440,7 +452,7 @@ export function CardStack<T>({
       }
       .pc-cardstack__expand:hover {
         color: var(--fg-dim, #b9d4e8);
-        border-color: color-mix(in srgb, var(--accent, #7dd3fc) 45%, var(--border));
+        border-color: color-mix(in srgb, var(--cs-accent, var(--accent, #7dd3fc)) 45%, var(--border));
       }
       `}</style>
     </div>
