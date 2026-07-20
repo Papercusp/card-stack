@@ -347,7 +347,14 @@ export function CardStack<T>({
         transition: transform 340ms cubic-bezier(0.3, 1.16, 0.35, 1), opacity 260ms ease;
       }
       .pc-cardstack__card.is-top { overflow: visible; }
-      .pc-cardstack__card.is-back { cursor: pointer; }
+      /* The active card RESPONDS — hover/keyboard focus warms its edge. */
+      .pc-cardstack__card.is-top:hover,
+      .pc-cardstack__card.is-top:focus-within {
+        border-color: color-mix(in srgb, var(--cs-accent, var(--accent, #7dd3fc)) 45%, var(--border, rgba(125, 211, 252, 0.2)));
+      }
+      /* Stacked cards sit visibly BEHIND — a touch darker than the top card,
+         so the pile has depth even before the dimmed content reads. */
+      .pc-cardstack__card.is-back { cursor: pointer; filter: brightness(0.88); }
       /* Pronounced hover (owner ask 2026-07-19): the stacked card lights up,
          its edge goes accent, and it nudges toward the front. The CSS
          translate property composes with the inline transform, so the nudge
@@ -384,11 +391,11 @@ export function CardStack<T>({
         position: absolute; top: -12px; left: 50%; transform: translateX(-50%); z-index: 5;
         display: inline-flex; align-items: center; gap: 7px;
         max-width: calc(100% - 170px);
-        padding: 3px 10px; border-radius: 8px;
+        padding: 3px 12px; border-radius: 8px;
         background: var(--bg-1, #0d151d);
-        border: 1px solid color-mix(in srgb, var(--cs-accent, var(--accent, #7dd3fc)) 32%, var(--border, rgba(125, 211, 252, 0.2)));
+        border: 1px solid color-mix(in srgb, var(--cs-accent, var(--accent, #7dd3fc)) 40%, var(--border, rgba(125, 211, 252, 0.2)));
         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
-        font-size: 10.5px; white-space: nowrap;
+        font-size: 11px; white-space: nowrap;
       }
       .pc-cardstack__header-label {
         font-weight: 700; color: var(--fg, #e7eef5);
